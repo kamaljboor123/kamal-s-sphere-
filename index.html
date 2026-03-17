@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>كرة روبيك الناطقة - النسخة النهائية</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #111; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            border: 1px solid #ffaa00;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        
+        #move-counter {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: clamp(12px, 4vw, 16px);
+            border: 1px solid #ffaa00;
+            z-index: 100;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+        }
+        
+        #move-counter span {
+            color: #ffaa00;
+            font-size: clamp(18px, 6vw, 24px);
+            margin-left: 8px;
+        }
+        
+        #timer {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: clamp(12px, 4vw, 16px);
+            border: 1px solid #ffaa00;
+            z-index: 100;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+        
+        #timer span {
+            color: #ffaa00;
+            font-size: clamp(18px, 6vw, 24px);
+            margin-left: 8px;
+        }
+        
+        /* لوحة التحكم في الأسفل - صفين */
+        #control-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            width: fit-content;
+            max-width: 95%;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            border: 1px solid #ffaa00;
+            padding: 12px;
+            z-index: 200;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .micro-group {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .main-btn {
+            width: clamp(40px, 10vw, 48px);
+            height: clamp(40px, 10vw, 48px);
+            border-radius: 50%;
+            border: none;
+            font-weight: bold;
+            font-size: clamp(16px, 4vw, 20px);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        
+        .btn-u { background: #ffffff; color: black; }
+        .btn-d { background: #ffff00; color: black; }
+        .btn-r { background: #ff8888; color: black; }
+        .btn-l { background: #ff4444; color: white; }
+        .btn-f { background: #8888ff; color: white; }
+        .btn-b { background: #4444ff; color: white; }
+        .btn-m { background: #ffaa00; color: black; }
+        .btn-s { background: #ff88ff; color: black; }
+        .btn-e { background: #88ff88; color: black; }
+        
+        .main-btn:hover {
+            transform: scale(1.15);
+            filter: brightness(1.2);
+        }
+        
+        .direction-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.95);
+            border-radius: 40px;
+            padding: 6px;
+            display: none;
+            gap: 6px;
+            border: 1px solid #ffaa00;
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 300;
+        }
+        
+        .micro-group:hover .direction-menu {
+            display: flex;
+        }
+        
+        .dir-btn {
+            width: clamp(34px, 8vw, 40px);
+            height: clamp(34px, 8vw, 40px);
+            border-radius: 50%;
+            border: none;
+            font-size: clamp(16px, 4vw, 20px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .dir-cw {
+            background: #2e7d32;
+            color: white;
+        }
+        
+        .dir-ccw {
+            background: #c62828;
+            color: white;
+        }
+        
+        .dir-btn:hover {
+            transform: scale(1.15);
+            filter: brightness(1.3);
+        }
+        
+        .action-group {
+            display: flex;
+            gap: 6px;
+            margin-left: 4px;
+        }
+        
+        .action-btn {
+            width: clamp(40px, 10vw, 48px);
+            height: clamp(40px, 10vw, 48px);
+            border-radius: 50%;
+            border: none;
+            font-size: clamp(18px, 5vw, 22px);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        
+        .shuffle-btn {
+            background: #ff6600;
+            color: white;
+        }
+        
+        .solve-btn {
+            background: #00cc66;
+            color: white;
+        }
+        
+        .reset-btn {
+            background: #ffaa00;
+            color: black;
+            width: clamp(40px, 10vw, 48px);
+            height: clamp(40px, 10vw, 48px);
+            border-radius: 50%;
+            border: none;
+            font-size: clamp(18px, 5vw, 22px);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        
+        .action-btn:hover, .reset-btn:hover {
+            transform: scale(1.15);
+            filter: brightness(1.2);
+        }
+        
+        #shuffle-status {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffaa00;
+            font-size: clamp(12px, 3vw, 14px);
+            background: rgba(0,0,0,0.8);
+            padding: 6px 16px;
+            border-radius: 30px;
+            border: 1px solid #ffaa00;
+            z-index: 202;
+            display: none;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 600px) {
+            #control-panel {
+                padding: 8px;
+                border-radius: 40px;
+            }
+            
+            .main-btn, .action-btn, .reset-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+            
+            .dir-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+            }
+            
+            #timer, #move-counter {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+            
+            #timer span, #move-counter span {
+                font-size: 14px;
+            }
+        }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="info">
+        🔴 الكرة الناطقة - KAMAL J
+    </div>
+    
+    <div id="timer">
+        الوقت: <span id="time-display">00:00</span>
+    </div>
+    
+    <div id="move-counter">
+        الحركات: <span id="move-count">0</span>
+    </div>
+    
+    <div id="shuffle-status">جاري التنفيذ...</div>
+    
+    <div id="control-panel">
+        <!-- الصف الأول: U, D, R, L, F, B -->
+        <div class="control-row">
+            <div class="micro-group">
+                <button class="main-btn btn-u">U</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="UCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="UCCW">↺</button>
+                </div>
+            </div>
+            <div class="micro-group">
+                <button class="main-btn btn-d">D</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="DCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="DCCW">↺</button>
+                </div>
+            </div>
+            <div class="micro-group">
+                <button class="main-btn btn-r">R</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="RCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="RCCW">↺</button>
+                </div>
+            </div>
+            <div class="micro-group">
+                <button class="main-btn btn-l">L</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="LCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="LCCW">↺</button>
+                </div>
+            </div>
+            <div class="micro-group">
+                <button class="main-btn btn-f">F</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="FCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="FCCW">↺</button>
+                </div>
+            </div>
+            <div class="micro-group">
+                <button class="main-btn btn-b">B</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="BCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="BCCW">↺</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الصف الثاني: M, S, E مع أزرار الإجراءات -->
+        <div class="control-row">
+            <div class="micro-group">
+                <button class="main-btn btn-m">M</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="MCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="MCCW">↺</button>
+                </div>
+            </div>
+            <div class="micro-group">
+                <button class="main-btn btn-s">S</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="SCW">↻</button>
+                    <button class="dir-btn dir-ccw" id="SCCW">↺</button>
+                </div>
+            </div>
+            <div class="micro-group">
+                <button class="main-btn btn-e">E</button>
+                <div class="direction-menu">
+                    <button class="dir-btn dir-cw" id="ECW">↻</button>
+                    <button class="dir-btn dir-ccw" id="ECCW">↺</button>
+                </div>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="action-group">
+                <button class="action-btn shuffle-btn" id="shuffleBtn">🎲</button>
+                <button class="action-btn solve-btn" id="solveBtn">⚡</button>
+                <button class="reset-btn" id="resetAll">↺</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ===== نظام الصوت =====
+        function playClickSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch(e) {}
+        }
+
+        // ===== عداد الحركات =====
+        let moveCount = 0;
+        const moveCountElement = document.getElementById('move-count');
+        
+        function incrementMoveCount() {
+            moveCount++;
+            moveCountElement.textContent = moveCount;
+            playClickSound();
+        }
+        
+        function resetMoveCount() {
+            moveCount = 0;
+            moveCountElement.textContent = moveCount;
+        }
+
+        // ===== Timer =====
+        let startTime = Date.now();
+        let timerInterval;
+        const timeDisplay = document.getElementById('time-display');
+        
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+        
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function resetTimer() {
+            clearInterval(timerInterval);
+            startTimer();
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111122);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 3, 8);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+
+        // ===== تفعيل دوران الكرة بالكامل =====
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.enableZoom = true;
+        controls.enableRotate = true;
+        controls.enablePan = false;
+        controls.rotateSpeed = 1.0;
+        controls.target.set(0, 0, 0);
+        
+        // إضاءة متوازنة
+        scene.add(new THREE.AmbientLight(0x404060));
+        
+        const light1 = new THREE.PointLight(0xffffff, 0.9);
+        light1.position.set(5, 10, 7);
+        scene.add(light1);
+        
+        const light2 = new THREE.PointLight(0xffffff, 0.8);
+        light2.position.set(-5, -3, -7);
+        scene.add(light2);
+        
+        const light3 = new THREE.PointLight(0xffffff, 0.6);
+        light3.position.set(0, -5, 0);
+        scene.add(light3);
+
+        const rubikGroup = new THREE.Group();
+        scene.add(rubikGroup);
+
+        const radius = 2.5;
+        const pieceSize = (2 * radius) / 3;
+        
+        const pieces = [];
+        
+        // الأحرف الثمانية للوجه العلوي
+        const topSymbols = ['K', 'a', 'm', 'a', 'l', '@', 'J', 'b'];
+        let symbolIndex = 0;
+        
+        // الإعدادات المثالية
+        const step = 0.1;
+        const gap = 0.03;
+        
+        // إنشاء نقاط الكرة
+        const spherePoints = [];
+        for (let x = -radius; x <= radius; x += step) {
+            for (let y = -radius; y <= radius; y += step) {
+                for (let z = -radius; z <= radius; z += step) {
+                    const dist = Math.sqrt(x*x + y*y + z*z);
+                    if (dist <= radius && dist > radius - gap) {
+                        spherePoints.push(new THREE.Vector3(x, y, z));
+                    }
+                }
+            }
+        }
+        
+        // تقسيم النقاط إلى مناطق - 27 منطقة (3x3x3)
+        const regions = new Array(27).fill().map(() => []);
+        spherePoints.forEach(p => {
+            const ix = Math.floor((p.x + radius) / pieceSize);
+            const iy = Math.floor((p.y + radius) / pieceSize);
+            const iz = Math.floor((p.z + radius) / pieceSize);
+            
+            if (ix >= 0 && ix < 3 && iy >= 0 && iy < 3 && iz >= 0 && iz < 3) {
+                regions[ix * 9 + iy * 3 + iz].push(p.clone());
+            }
+        });
+        
+        // إنشاء القطع
+        regions.forEach((regionPoints, index) => {
+            if (regionPoints.length < 10) return;
+            
+            const ix = Math.floor(index / 9);
+            const iy = Math.floor((index % 9) / 3);
+            const iz = index % 3;
+            
+            if (ix === 1 && iy === 1 && iz === 1) return;
+            
+            try {
+                const centerX = (ix - 1) * pieceSize;
+                const centerY = (iy - 1) * pieceSize;
+                const centerZ = (iz - 1) * pieceSize;
+                
+                const localPoints = regionPoints.map(p => {
+                    return new THREE.Vector3(
+                        p.x - centerX,
+                        p.y - centerY,
+                        p.z - centerZ
+                    );
+                });
+                
+                const geom = new ConvexGeometry(localPoints);
+                geom.computeVertexNormals();
+                
+                let color;
+                if (iy === 2) color = 0xffffff;  // الطبقة العلوية - أبيض
+                else if (iy === 1) color = 0xff3333;  // الطبقة الوسطى - أحمر
+                else color = 0xffff00;  // الطبقة السفلية - أصفر
+                
+                const mat = new THREE.MeshPhongMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.98,
+                    shininess: 90,
+                    emissive: 0x000000,
+                    specular: 0x444444,
+                    flatShading: false,
+                    side: THREE.DoubleSide,
+                    smoothShading: true
+                });
+                
+                const mesh = new THREE.Mesh(geom, mat);
+                
+                // إضافة حدود سوداء
+                const edges = new THREE.EdgesGeometry(geom);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+                mesh.add(line);
+                
+                // نظام المصفوفات
+                const matrix = new THREE.Matrix4();
+                matrix.makeTranslation(centerX, centerY, centerZ);
+                mesh.applyMatrix4(matrix);
+                
+                mesh.userData = {
+                    originalMatrix: matrix.clone(),
+                    position: new THREE.Vector3(centerX, centerY, centerZ),
+                    ix, iy, iz
+                };
+                
+                pieces.push(mesh);
+                rubikGroup.add(mesh);
+                
+            } catch (e) {}
+        });
+
+        // ===== دالة إنشاء صفيحة سوداء مع حرف =====
+        function createPlate(symbol) {
+            const plateSize = 0.8;
+            const circleGeom = new THREE.CircleGeometry(plateSize/2, 64);
+            
+            // تعديل النقاط لتصبح منحنية للخارج
+            const positionAttribute = circleGeom.getAttribute('position');
+            
+            for (let i = 0; i < positionAttribute.count; i++) {
+                const x = positionAttribute.getX(i);
+                const y = positionAttribute.getY(i);
+                
+                // المسافة من المركز
+                const r = Math.sqrt(x*x + y*y);
+                
+                // انحناء دقيق يتبع سطح الكرة (للخارج)
+                const sphereZ = radius - Math.sqrt(Math.max(0, radius*radius - r*r));
+                positionAttribute.setZ(i, sphereZ);
+            }
+            
+            circleGeom.computeVertexNormals();
+            
+            // إنشاء Canvas للحرف
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // رسم دائرة سوداء
+            ctx.beginPath();
+            ctx.arc(256, 256, 220, 0, Math.PI * 2);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+            
+            // رسم الحرف باللون الأبيض
+            ctx.font = 'Bold 280px "Arial"';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(symbol, 256, 256);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            const material = new THREE.MeshPhongMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                emissive: 0x111111,
+                shininess: 50
+            });
+            
+            const plate = new THREE.Mesh(circleGeom, material);
+            
+            return plate;
+        }
+
+        // ===== إضافة الأحرف على القطع العلوية (8 قطع) مع الاتجاه الصحيح =====
+        const topPieces = pieces.filter(p => p.userData.iy === 2 && !(p.userData.ix === 1 && p.userData.iz === 1));
+        
+        // ترتيب القطع
+        topPieces.sort((a, b) => {
+            const angleA = Math.atan2(a.userData.iz - 1, a.userData.ix - 1);
+            const angleB = Math.atan2(b.userData.iz - 1, b.userData.ix - 1);
+            return angleA - angleB;
+        });
+
+        topPieces.forEach((piece, index) => {
+            if (index < topSymbols.length) {
+                const plate = createPlate(topSymbols[index]);
+                
+                // اتجاه الخارج من مركز الكرة
+                const worldPos = piece.position.clone();
+                const direction = worldPos.clone().normalize();
+                
+                // نضع الصفيحة في مركز القطعة (محلياً)
+                plate.position.set(0, 0, 0);
+                
+                // نوجهها لتكون موازية للسطح
+                const up = new THREE.Vector3(0, 1, 0);
+                const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
+                plate.quaternion.copy(quaternion);
+                
+                // نديرها لتكون موازية للسطح
+                plate.rotateX(-Math.PI / 2);
+                
+                // نحركها إلى سطح القطعة
+                const surfacePos = direction.clone().multiplyScalar(radius);
+                const localPos = surfacePos.clone().sub(piece.position.clone());
+                plate.position.copy(localPos);
+                
+                piece.add(plate);
+            }
+        });
+
+        // ===== إضافة الدوائر السوداء على مراكز الأوجه الستة =====
+        const centerPieces = {
+            U: pieces.find(p => p.userData.ix === 1 && p.userData.iy === 2 && p.userData.iz === 1),
+            D: pieces.find(p => p.userData.ix === 1 && p.userData.iy === 0 && p.userData.iz === 1),
+            R: pieces.find(p => p.userData.ix === 2 && p.userData.iy === 1 && p.userData.iz === 1),
+            L: pieces.find(p => p.userData.ix === 0 && p.userData.iy === 1 && p.userData.iz === 1),
+            F: pieces.find(p => p.userData.ix === 1 && p.userData.iy === 1 && p.userData.iz === 2),
+            B: pieces.find(p => p.userData.ix === 1 && p.userData.iy === 1 && p.userData.iz === 0)
+        };
+
+        // دالة إنشاء دائرة سوداء بدون حرف
+        function createBlackPlate() {
+            const plateSize = 0.8;
+            const circleGeom = new THREE.CircleGeometry(plateSize/2, 64);
+            
+            const positionAttribute = circleGeom.getAttribute('position');
+            
+            for (let i = 0; i < positionAttribute.count; i++) {
+                const x = positionAttribute.getX(i);
+                const y = positionAttribute.getY(i);
+                const r = Math.sqrt(x*x + y*y);
+                const sphereZ = radius - Math.sqrt(Math.max(0, radius*radius - r*r));
+                positionAttribute.setZ(i, sphereZ);
+            }
+            
+            circleGeom.computeVertexNormals();
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.beginPath();
+            ctx.arc(256, 256, 220, 0, Math.PI * 2);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            const material = new THREE.MeshPhongMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                emissive: 0x111111,
+                shininess: 50
+            });
+            
+            return new THREE.Mesh(circleGeom, material);
+        }
+
+        // إضافة الدوائر للمراكز
+        if (centerPieces.U) {
+            const plate = createBlackPlate();
+            plate.position.set(0, pieceSize * 0.5, 0);
+            plate.rotation.x = -Math.PI / 2;
+            centerPieces.U.add(plate);
+        }
+
+        if (centerPieces.D) {
+            const plate = createBlackPlate();
+            plate.position.set(0, -pieceSize * 0.5, 0);
+            plate.rotation.x = Math.PI / 2;
+            centerPieces.D.add(plate);
+        }
+
+        if (centerPieces.R) {
+            const plate = createBlackPlate();
+            plate.position.set(pieceSize * 0.5, 0, 0);
+            plate.rotation.y = Math.PI / 2;
+            plate.rotation.x = 0;
+            centerPieces.R.add(plate);
+        }
+
+        if (centerPieces.L) {
+            const plate = createBlackPlate();
+            plate.position.set(-pieceSize * 0.5, 0, 0);
+            plate.rotation.y = -Math.PI / 2;
+            plate.rotation.x = 0;
+            centerPieces.L.add(plate);
+        }
+
+        if (centerPieces.F) {
+            const plate = createBlackPlate();
+            plate.position.set(0, 0, pieceSize * 0.5);
+            plate.rotation.y = 0;
+            plate.rotation.x = 0;
+            centerPieces.F.add(plate);
+        }
+
+        if (centerPieces.B) {
+            const plate = createBlackPlate();
+            plate.position.set(0, 0, -pieceSize * 0.5);
+            plate.rotation.y = Math.PI;
+            plate.rotation.x = 0;
+            centerPieces.B.add(plate);
+        }
+
+        rubikGroup.rotation.set(0.2, 0.5, 0.1);
+
+        // بدء التايمر
+        startTimer();
+
+        // دالة تدوير الطبقة
+        function rotateLayer(axis, layerValue, clockwise) {
+            const angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
+            const threshold = 0.5;
+            
+            const selectedPieces = pieces.filter(piece => {
+                const pos = piece.userData.position;
+                switch(axis) {
+                    case 'x': return Math.abs(pos.x - layerValue) < threshold;
+                    case 'y': return Math.abs(pos.y - layerValue) < threshold;
+                    case 'z': return Math.abs(pos.z - layerValue) < threshold;
+                    default: return false;
+                }
+            });
+            
+            if (selectedPieces.length === 0) return;
+            
+            incrementMoveCount();
+            
+            const rotMatrix = new THREE.Matrix4();
+            switch(axis) {
+                case 'x': rotMatrix.makeRotationX(angle); break;
+                case 'y': rotMatrix.makeRotationY(angle); break;
+                case 'z': rotMatrix.makeRotationZ(angle); break;
+            }
+            
+            selectedPieces.forEach(piece => {
+                piece.matrix.premultiply(rotMatrix);
+                piece.matrix.decompose(piece.position, piece.quaternion, piece.scale);
+                piece.userData.position.copy(piece.position);
+            });
+        }
+
+        // ===== دوال الخلط والحل البطيء =====
+        let isShuffling = false;
+        let moveHistory = [];
+        
+        function shuffleSlow() {
+            if (isShuffling) return;
+            isShuffling = true;
+            
+            const axes = ['x', 'y', 'z'];
+            const layers = [-pieceSize, 0, pieceSize];
+            const directions = [true, false];
+            
+            moveHistory = [];
+            
+            document.getElementById('shuffle-status').style.display = 'block';
+            document.getElementById('shuffle-status').textContent = 'جاري الخلط...';
+            
+            for (let i = 0; i < 12; i++) {
+                const axis = axes[Math.floor(Math.random() * axes.length)];
+                const layer = layers[Math.floor(Math.random() * layers.length)];
+                const clockwise = directions[Math.floor(Math.random() * directions.length)];
+                
+                moveHistory.push({ axis, layer, clockwise: !clockwise });
+                
+                setTimeout(() => {
+                    rotateLayer(axis, layer, clockwise);
+                    
+                    if (i === 11) {
+                        document.getElementById('shuffle-status').style.display = 'none';
+                        isShuffling = false;
+                    }
+                }, i * 300);
+            }
+        }
+        
+        function solveSlow() {
+            if (isShuffling || moveHistory.length === 0) return;
+            isShuffling = true;
+            
+            document.getElementById('shuffle-status').style.display = 'block';
+            document.getElementById('shuffle-status').textContent = 'جاري الحل...';
+            
+            moveHistory.reverse().forEach((move, index) => {
+                setTimeout(() => {
+                    rotateLayer(move.axis, move.layer, move.clockwise);
+                    
+                    if (index === moveHistory.length - 1) {
+                        document.getElementById('shuffle-status').style.display = 'none';
+                        isShuffling = false;
+                        moveHistory = [];
+                    }
+                }, index * 300);
+            });
+        }
+
+        // ربط الأزرار
+        document.getElementById('UCW').addEventListener('click', () => !isShuffling && rotateLayer('y', pieceSize, true));
+        document.getElementById('UCCW').addEventListener('click', () => !isShuffling && rotateLayer('y', pieceSize, false));
+        document.getElementById('DCW').addEventListener('click', () => !isShuffling && rotateLayer('y', -pieceSize, true));
+        document.getElementById('DCCW').addEventListener('click', () => !isShuffling && rotateLayer('y', -pieceSize, false));
+        document.getElementById('ECW').addEventListener('click', () => !isShuffling && rotateLayer('y', 0, true));
+        document.getElementById('ECCW').addEventListener('click', () => !isShuffling && rotateLayer('y', 0, false));
+        
+        document.getElementById('RCW').addEventListener('click', () => !isShuffling && rotateLayer('x', pieceSize, true));
+        document.getElementById('RCCW').addEventListener('click', () => !isShuffling && rotateLayer('x', pieceSize, false));
+        document.getElementById('LCW').addEventListener('click', () => !isShuffling && rotateLayer('x', -pieceSize, true));
+        document.getElementById('LCCW').addEventListener('click', () => !isShuffling && rotateLayer('x', -pieceSize, false));
+        document.getElementById('MCW').addEventListener('click', () => !isShuffling && rotateLayer('x', 0, true));
+        document.getElementById('MCCW').addEventListener('click', () => !isShuffling && rotateLayer('x', 0, false));
+        
+        document.getElementById('FCW').addEventListener('click', () => !isShuffling && rotateLayer('z', pieceSize, true));
+        document.getElementById('FCCW').addEventListener('click', () => !isShuffling && rotateLayer('z', pieceSize, false));
+        document.getElementById('BCW').addEventListener('click', () => !isShuffling && rotateLayer('z', -pieceSize, true));
+        document.getElementById('BCCW').addEventListener('click', () => !isShuffling && rotateLayer('z', -pieceSize, false));
+        document.getElementById('SCW').addEventListener('click', () => !isShuffling && rotateLayer('z', 0, true));
+        document.getElementById('SCCW').addEventListener('click', () => !isShuffling && rotateLayer('z', 0, false));
+        
+        document.getElementById('shuffleBtn').addEventListener('click', shuffleSlow);
+        document.getElementById('solveBtn').addEventListener('click', solveSlow);
+        
+        document.getElementById('resetAll').addEventListener('click', () => {
+            if (isShuffling) return;
+            pieces.forEach(piece => {
+                piece.matrix.copy(piece.userData.originalMatrix);
+                piece.matrix.decompose(piece.position, piece.quaternion, piece.scale);
+                piece.userData.position.copy(piece.position);
+            });
+            rubikGroup.rotation.set(0.2, 0.5, 0.1);
+            resetMoveCount();
+            resetTimer();
+            moveHistory = [];
+            playClickSound();
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
